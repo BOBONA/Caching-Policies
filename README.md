@@ -15,7 +15,7 @@ Before using this module, ensure you have installed the following dependencies:
 To clone the repository along with its submodules in one step, use the following command:
 
 ```bash
-git clone --recurse-submodules https://github.com/SSD-Brandeis/RocksDB-Wrapper
+git clone --recurse-submodules https://github.com/BOBONA/Caching-Policies
 ```
 
 This command will clone the repository and automatically initialize and update the submodules, which include RocksDB-SSD and KV-WorkloadGenerator. If you've already cloned the repository without initializing the submodules, you can run:
