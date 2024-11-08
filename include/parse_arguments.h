@@ -1,9 +1,10 @@
+#pragma once
 #include <iostream>
 
 #include "args.hxx"
 #include "db_env.h"
 
-int parse_arguments(int argc, char *argv[], DBEnv *env) {
+inline int parse_arguments(int argc, char *argv[], DBEnv *env) {
   args::ArgumentParser parser("RocksDB_parser.", "");
   args::Group group1(parser, "This group is all exclusive:",
                      args::Group::Validators::DontCare);
@@ -12,60 +13,58 @@ int parse_arguments(int argc, char *argv[], DBEnv *env) {
       group1, "d", "Destroy and recreate the database [def: 1]",
       {'d', "destroy"});
   args::ValueFlag<int> clear_system_cache_cmd(
-      group1, "cc", "Clear system cache [def: 1]", {"cc"});
-
+      group1, "cc", "Clear system cache [def: 1]",
+      {"cc"});
   args::ValueFlag<int> size_ratio_cmd(
       group1, "T",
-      "The number of unique inserts to issue in the experiment [def: 10]",
+      "The size ratio for the LSM [default: 10]",
       {'T', "size_ratio"});
   args::ValueFlag<int> buffer_size_in_pages_cmd(
       group1, "P",
-      "The number of unique inserts to issue in the experiment [def: 512]",
+      "The number of pages in memory buffer [default: 4096]",
       {'P', "buffer_size_in_pages"});
   args::ValueFlag<int> entries_per_page_cmd(
       group1, "B",
-      "The number of unique inserts to issue in the experiment [def: 4]",
+      "The number of entries in one page [default: 4]",
       {'B', "entries_per_page"});
   args::ValueFlag<int> entry_size_cmd(
       group1, "E",
-      "The number of unique inserts to issue in the experiment [def: 1024 B]",
+      "The size of one entry you have in workload.txt [default: 1024 B]",
       {'E', "entry_size"});
   args::ValueFlag<long> buffer_size_cmd(
       group1, "M",
-      "The number of unique inserts to issue in the experiment [def: 16 MB]",
+      "The memory buffer size in bytes [default: 16 MB]",
       {'M', "memory_size"});
   args::ValueFlag<int> file_to_memtable_size_ratio_cmd(
       group1, "file_to_memtable_size_ratio",
-      "The number of unique inserts to issue in the experiment [def: 1]",
+      "The ratio between files and memtable [default: 1]",
       {'f', "file_to_memtable_size_ratio"});
   args::ValueFlag<long> file_size_cmd(
       group1, "file_size",
-      "The number of unique inserts to issue in the experiment [def: 256 KB]",
+      "The size of one SST file [default: 256 KB]",
       {'F', "file_size"});
   args::ValueFlag<int> verbosity_cmd(
       group1, "verbosity", "The verbosity level of execution [0,1,2; def: 0]",
       {'V', "verbosity"});
   args::ValueFlag<int> compaction_pri_cmd(
       group1, "compaction_pri",
-      "[Compaction priority: 1 for kMinOverlappingRatio, 2 for "
-      "kByCompensatedSize, 3 for kOldestLargestSeqFirst, 4 for "
-      "kOldestSmallestSeqFirst; def: 1]",
+      "Compaction priority [1: kMinOverlappingRatio, 2: kByCompensatedSize, "
+      "3: kOldestLargestSeqFirst, 4: kOldestSmallestSeqFirst; default: 1]",
       {'c', "compaction_pri"});
   args::ValueFlag<int> compaction_style_cmd(
       group1, "compaction_style",
-      "[Compaction priority: 1 for kCompactionStyleLevel, 2 for "
-      "kCompactionStyleUniversal, 3 for kCompactionStyleFIFO, 4 for "
-      "kCompactionStyleNone; def: 1]",
+      "Compaction priority [1: kCompactionStyleLevel, 2: kCompactionStyleUniversal, "
+      "3: kCompactionStyleFIFO, 4: kCompactionStyleNone; default: 1]",
       {'C', "compaction_style"});
   args::ValueFlag<int> bits_per_key_cmd(
       group1, "bits_per_key",
-      "The number of bits per key assigned to Bloom filter [def: 10]",
+      "The number of bits per key assigned to Bloom filter [default: 10]",
       {'b', "bits_per_key"});
   args::ValueFlag<int> block_cache_cmd(
-      group1, "bb", "Block cache size in MB [def: 8 MB]", {"bb"});
+      group1, "bb", "Block cache size in MB [default: 8 MB]", {"bb"});
   args::ValueFlag<int> enable_perf_iostat_cmd(
       group1, "enable_perf_iostat",
-      "Enable RocksDB's internal Perf and IOstat [def: 0]", {"stat"});
+      "Enable RocksDB's internal Perf and IOstat [default: 0]", {"stat"});
 
   try {
     parser.ParseCLI(argc, argv);
