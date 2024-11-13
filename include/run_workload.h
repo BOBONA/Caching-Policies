@@ -1,3 +1,5 @@
+#pragma once
+
 #include <rocksdb/db.h>
 #include <rocksdb/iostats_context.h>
 #include <rocksdb/options.h>
@@ -11,32 +13,35 @@
 #include <iomanip>
 #include <iostream>
 #include <mutex>
-#include <sstream>
 #include <thread>
 
 #include "config_options.h"
 
-std::string kDBPath = "./db";
-std::mutex mtx;
-std::condition_variable cv;
-bool compaction_complete = false;
+#include <rocksdb/statistics.h>
 
-void printExperimentalSetup(DBEnv* env);
+inline std::string kDBPath = "./db";
+inline std::mutex mtx;
+inline std::condition_variable cv;
+inline bool compaction_complete = false;
 
-class CompactionsListener : public EventListener {
+/** Forward declaration */
+void PrintExperimentalSetup(const DBEnv& env);
+
+/** Notifies the cv condition when a compaction is completed. */
+class CompactionsListener final : public EventListener {
 public:
-  explicit CompactionsListener() {}
+  explicit CompactionsListener() = default;
 
-  void OnCompactionCompleted(DB* db, const CompactionJobInfo& ci) override {
-    auto localtp = std::chrono::steady_clock::now();
-    std::lock_guard<std::mutex> lock(mtx);
+  void OnCompactionCompleted(DB *db, const CompactionJobInfo &ci) override {
+    std::lock_guard lock(mtx);
     compaction_complete = true;
     cv.notify_one();
   }
 };
 
-void WaitForCompactions(DB* db) {
-  std::unique_lock<std::mutex> lock(mtx);
+/** Waits for all compactions to complete. */
+inline void WaitForCompactions(DB *db) {
+  std::unique_lock lock(mtx);
   uint64_t num_running_compactions;
   uint64_t pending_compaction_bytes;
   uint64_t num_pending_compactions;
@@ -49,130 +54,104 @@ void WaitForCompactions(DB* db) {
     if (num_running_compactions == 0 && pending_compaction_bytes == 0 && num_pending_compactions == 0) {
       break;
     }
+
     cv.wait_for(lock, std::chrono::seconds(2));
   }
 }
 
-int runWorkload(DBEnv* env) {
-  DB* db;
+/** Runs the workload specified in the workload.txt file. */
+inline bool RunWorkload(DBEnv& env) {
   Options options;
   WriteOptions write_options;
   ReadOptions read_options;
   BlockBasedTableOptions table_options;
-  FlushOptions flush_options;
 
-  configOptions(env, &options, &table_options, &write_options, &read_options, &flush_options);
+  configureOptions(env, options);
+  configureTableOptions(env, table_options);
+  configureWriteOptions(env, write_options);
+  configureReadOptions(env, read_options);
 
-  if (env->IsDestroyDatabaseEnabled()) {
+  options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+
+  if (env.destroy_database) {
+    std::cout << "Destroying database..." << std::endl;
     DestroyDB(kDBPath, options);
-    std::cout << "Destroying database ..." << std::endl;
   }
+
+  if (env.clear_system_cache) {
+    std::cout << "Clearing system cache..." << std::endl;
+    system("sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'");
+  }
+
+  if (env.enable_perf_iostat) {
+    SetPerfLevel(kEnableTimeAndCPUTimeExceptForMutex);
+    get_perf_context()->Reset();
+    get_perf_context()->ClearPerLevelPerfContext();
+    get_perf_context()->EnablePerLevelPerfContext();
+    get_iostats_context()->Reset();
+    options.statistics = CreateDBStatistics();
+  }
+
+  PrintExperimentalSetup(env);
 
   auto compaction_listener = std::make_shared<CompactionsListener>();
   options.listeners.emplace_back(compaction_listener);
 
-  printExperimentalSetup(env);
-
+  DB* db;
   Status s = DB::Open(options, kDBPath, &db);
-  if (!s.ok()) {
-    std::cerr << s.ToString() << std::endl;
-    return -1;
-  }
+  assert(s.ok(), s.ToString());
 
   std::ifstream workload_file("workload.txt");
-  if (!workload_file.is_open()) {
-    std::cerr << "Failed to open workload file." << std::endl;
-    return -1;
-  }
-
-  uint32_t workload_size = 0;
-  std::string line;
-  while (std::getline(workload_file, line)) {
-    ++workload_size;
-  }
-  workload_file.close();
-
-  if (env->clear_system_cache) {
-    std::cout << "Clearing system cache ..." << std::endl;
-    system("sudo sh -c 'echo 3 >/proc/sys/vm/drop_caches'");
-  }
-
-  if (env->IsPerfIOStatEnabled()) {
-    rocksdb::SetPerfLevel(rocksdb::PerfLevel::kEnableTimeAndCPUTimeExceptForMutex);
-    rocksdb::get_perf_context()->Reset();
-    rocksdb::get_perf_context()->ClearPerLevelPerfContext();
-    rocksdb::get_perf_context()->EnablePerLevelPerfContext();
-    rocksdb::get_iostats_context()->Reset();
-    Options options;
-    options.statistics = rocksdb::CreateDBStatistics();
-  }
-
-  workload_file.open("workload.txt");
-  if (!workload_file.is_open()) {
-    std::cerr << "Failed to reopen workload file." << std::endl;
-    return -1;
-  }
+  assert(workload_file.is_open(), "Failed to open workload file.");
 
   auto it = db->NewIterator(read_options);
-  uint32_t counter = 0;
-
   while (!workload_file.eof()) {
     char instruction;
     std::string key, start_key, end_key, value;
     workload_file >> instruction;
 
     switch (instruction) {
-    case 'I':  // Insert
-      workload_file >> key >> value;
-      s = db->Put(write_options, key, value);
-      if (!s.ok()) std::cerr << s.ToString() << std::endl;
-      ++counter;
-      break;
+      case 'I':  // Insert
+      case 'U':  // Update
+        workload_file >> key >> value;
+        s = db->Put(write_options, key, value);
+        assert(s.ok(), s.ToString());
+        break;
 
-    case 'U':  // Update
-      workload_file >> key >> value;
-      s = db->Put(write_options, key, value);
-      if (!s.ok()) std::cerr << s.ToString() << std::endl;
-      ++counter;
-      break;
+      case 'D':  // Delete
+        workload_file >> key;
+        s = db->Delete(write_options, key);
+        assert(s.ok(), s.ToString());
+        break;
 
-    case 'D':  // Delete
-      workload_file >> key;
-      s = db->Delete(write_options, key);
-      if (!s.ok()) std::cerr << s.ToString() << std::endl;
-      ++counter;
-      break;
+      case 'Q':  // Query
+        workload_file >> key;
+        s = db->Get(read_options, key, &value);
+        assert(s.ok(), s.ToString());
+        break;
 
-    case 'Q':  // Query
-      workload_file >> key;
-      s = db->Get(read_options, key, &value);
-      if (!s.ok()) std::cerr << s.ToString() << std::endl;
-      ++counter;
-      break;
+      case 'S':  // Scan
+        workload_file >> start_key >> end_key;
+        it->Refresh();
+        assert(it->status().ok(), it->status().ToString());
 
-    case 'S':  // Scan
-      workload_file >> start_key >> end_key;
-      it->Refresh();
-      assert(it->status().ok());
-
-      for (it->Seek(start_key); it->Valid(); it->Next()) {
-        if (it->key().ToString() >= end_key) {
-          break;
+        for (it->Seek(start_key); it->Valid(); it->Next()) {
+          if (it->key().ToString() >= end_key) {
+            break;
+          }
         }
-      }
 
-      if (!it->status().ok()) {
-        std::cerr << it->status().ToString() << std::endl;
-      }
-      ++counter;
-      break;
+        assert(it->status().ok(), it->status().ToString());
 
-    default:
-      std::cerr << "ERROR: Unknown instruction." << std::endl;
-      break;
+        break;
+
+      default:
+        std::cerr << "ERROR: Unknown workload instruction." << std::endl;
+        break;
     }
   }
 
+  delete it;
   workload_file.close();
 
   std::vector<std::string> live_files;
@@ -180,29 +159,24 @@ int runWorkload(DBEnv* env) {
   db->GetLiveFiles(live_files, &manifest_size, true);
   WaitForCompactions(db);
 
-  delete it;
   s = db->Close();
-  if (!s.ok()) {
-    std::cerr << s.ToString() << std::endl;
+  assert(s.ok(), s.ToString());
+
+  std::cout << "End of experiment - TEST!!" << std::endl;
+
+  if (env.enable_perf_iostat) {
+    SetPerfLevel(kDisable);
+    std::cout << "RocksDB Perf Context: " << std::endl << get_perf_context()->ToString() << std::endl;
+    std::cout << "RocksDB IO Stats Context: " << std::endl << get_iostats_context()->ToString() << std::endl;
+    std::cout << "Rocksdb Stats: " << std::endl << options.statistics->ToString() << std::endl;
   }
 
-  std::cout << "End of experiment - TEST !!" << std::endl;
-
-  if (env->IsPerfIOStatEnabled()) {
-    rocksdb::SetPerfLevel(rocksdb::PerfLevel::kDisable);
-    std::cout << "RocksDB Perf Context: " << std::endl
-      << rocksdb::get_perf_context()->ToString() << std::endl;
-    std::cout << "RocksDB IO Stats Context: " << std::endl
-      << rocksdb::get_iostats_context()->ToString() << std::endl;
-    std::cout << "Rocksdb Stats: " << std::endl
-      << options.statistics->ToString() << std::endl;
-  }
-
-  return 1;
+  return true;
 }
 
-void printExperimentalSetup(DBEnv* env) {
-  int l = 10;
+/** Prints the experimental setup to out. */
+inline void PrintExperimentalSetup(DBEnv& env) {
+  constexpr int l = 10;
   std::cout << std::setw(l) << "cmpt_sty"
     << std::setw(l) << "cmpt_pri"
     << std::setw(4) << "T"
@@ -210,22 +184,20 @@ void printExperimentalSetup(DBEnv* env) {
     << std::setw(l) << "B"
     << std::setw(l) << "E"
     << std::setw(l) << "M"
-    << std::setw(l) << "file_size"
     << std::setw(l) << "L1_size"
     << std::setw(l) << "blk_cch"
-    << std::setw(l) << "BPK"
+    << std::setw(l) << "bpk"
     << "\n";
 
-  std::cout << std::setw(l) << env->compaction_style
-    << std::setw(l) << env->compaction_pri
-    << std::setw(4) << env->size_ratio
-    << std::setw(l) << env->buffer_size_in_pages
-    << std::setw(l) << env->entries_per_page
-    << std::setw(l) << env->entry_size
-    << std::setw(l) << env->GetBufferSize()
-    << std::setw(l) << env->GetTargetFileSizeBase()
-    << std::setw(l) << env->GetMaxBytesForLevelBase()
-    << std::setw(l) << env->block_cache
-    << std::setw(l) << env->bits_per_key
+  std::cout << std::setw(l) << env.compaction_style
+    << std::setw(l) << env.compaction_pri
+    << std::setw(4) << env.size_ratio
+    << std::setw(l) << env.buffer_size_in_pages
+    << std::setw(l) << env.entries_per_page
+    << std::setw(l) << env.entry_size
+    << std::setw(l) << env.GetBufferSize()
+    << std::setw(l) << env.GetMaxBytesForLevelBase()
+    << std::setw(l) << env.capacity
+    << std::setw(l) << env.bits_per_key
     << std::endl;
 }

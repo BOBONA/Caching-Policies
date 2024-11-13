@@ -32,9 +32,7 @@ add_subdirectory(lib/rocksdb)
 add_subdirectory(lib/KV-WorkloadGenerator)
 
 set(SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/db_env.cc 
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/working_version.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/aux_time.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/working_version.cc
 )
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/bin)

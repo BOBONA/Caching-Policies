@@ -48,22 +48,6 @@ This example runs the experiment and sets the SST file size to 512 KB.
 
 ## Available Options
 
-Below are the supported options for running experiments with the RocksDB wrapper:
+See [parse_arguments.h](include/parse_arguments.h) for the supported options.
 
-```
-    -d, --destroy                      Destroy and recreate the database [default: 1]
-    --cc                               Clear system cache [default: 1]
-    -T, --size_ratio                   The size ratio for the LSM [default: 10]
-    -P, --buffer_size_in_pages         The number of pages in memory buffer [default: 4096]
-    -B, --entries_per_page             The number of entries in one page [default: 4]
-    -E, --entry_size                   The size of one entry you have in workload.txt [default: 1024 B]
-    -M, --memory_size                  The memory buffer size in bytes [default: 16 MB]
-    -f, --file_to_memtable_size_ratio  The ratio between files and memtable [default: 1]
-    -F, --file_size                    The size of one SST file [default: 256 KB]
-    -c, --compaction_pri               Compaction priority [1: kMinOverlappingRatio, 2: kByCompensatedSize, 3: kOldestLargestSeqFirst, 4: kOldestSmallestSeqFirst;default: 1]
-    -C, --compaction_style             Compaction style [1: kCompactionStyleLevel, 2: kCompactionStyleUniversal, 3: kCompactionStyleFIFO, 4: kCompactionStyleNone; default: 1]
-    -b, --bits_per_key                 The number of bits per key assigned to Bloom filter [default: 10]
-    --bb                               Block cache size in MB [default: 8 MB]
-    --stat                             Enable RocksDB's internal Perf and IOstat monitoring [default: 0]
-```
 
