@@ -43,9 +43,6 @@ public:
   // Control maximum total data size for level base (i.e. level 1)
   [[nodiscard]] uint64_t GetMaxBytesForLevelBase() const { return GetBufferSize() * size_ratio; }
 
-  /** Override the calculated buffer size */
-  void SetBufferSize(const size_t buffer_size) { this->buffer_size = buffer_size; }
-
   //============================================================================
   // Our own configuration options
 
@@ -122,7 +119,9 @@ public:
 
   /* See MetadataCacheOptions in table.h */
 
-  // TODO: add options
+  rocksdb::PinningTier top_level_index_pinning = rocksdb::PinningTier::kAll;  // Line 96 in table.h
+  rocksdb::PinningTier partition_pinning = rocksdb::PinningTier::kAll;  // 100
+  rocksdb::PinningTier unpartitioned_pinning = rocksdb::PinningTier::kAll;  // 108
 
   //============================================================================
   /* See ShardedCacheOptions in cache.h */

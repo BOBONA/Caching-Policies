@@ -76,8 +76,10 @@ inline void configureTableOptions(DBEnv& env, BlockBasedTableOptions& table_opti
   table_options.read_amp_bytes_per_bit = env.read_amp_bytes_per_bit;
   table_options.enable_index_compression = env.enable_index_compression;
 
-  // TODO: add MetadataCacheOptions
-  constexpr MetadataCacheOptions metadata_cache_options;
+  MetadataCacheOptions metadata_cache_options;
+  metadata_cache_options.top_level_index_pinning = env.top_level_index_pinning;
+  metadata_cache_options.partition_pinning = env.partition_pinning;
+  metadata_cache_options.unpartitioned_pinning = env.unpartitioned_pinning;
   table_options.metadata_cache_options = metadata_cache_options;
 }
 

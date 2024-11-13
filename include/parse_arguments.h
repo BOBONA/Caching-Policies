@@ -57,7 +57,7 @@ inline void ParseArguments(const int argc, char *argv[], DBEnv& env) {
     env.entry_size = get(entry_size_cmd);
 
   if (buffer_size_cmd)
-    env.SetBufferSize(get(buffer_size_cmd));
+    env.buffer_size = get(buffer_size_cmd);
 
   if (file_to_memtable_size_ratio_cmd)
     env.file_to_memtable_size_ratio = get(file_to_memtable_size_ratio_cmd);
