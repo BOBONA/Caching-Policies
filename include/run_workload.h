@@ -17,6 +17,8 @@
 
 #include "config_options.h"
 
+#include "ASSERT_message.h"
+
 #include <rocksdb/statistics.h>
 
 inline std::string kDBPath = "./db";
@@ -99,10 +101,10 @@ inline bool RunWorkload(DBEnv& env) {
 
   DB* db;
   Status s = DB::Open(options, kDBPath, &db);
-  assert(s.ok(), s.ToString());
+  ASSERT(s.ok(), s.ToString());
 
   std::ifstream workload_file("workload.txt");
-  assert(workload_file.is_open(), "Failed to open workload file.");
+  ASSERT(workload_file.is_open(), "Failed to open workload file.");
 
   auto it = db->NewIterator(read_options);
   while (!workload_file.eof()) {
@@ -115,25 +117,25 @@ inline bool RunWorkload(DBEnv& env) {
       case 'U':  // Update
         workload_file >> key >> value;
         s = db->Put(write_options, key, value);
-        assert(s.ok(), s.ToString());
+        ASSERT(s.ok(), s.ToString());
         break;
 
       case 'D':  // Delete
         workload_file >> key;
         s = db->Delete(write_options, key);
-        assert(s.ok(), s.ToString());
+        ASSERT(s.ok(), s.ToString());
         break;
 
       case 'Q':  // Query
         workload_file >> key;
         s = db->Get(read_options, key, &value);
-        assert(s.ok(), s.ToString());
+        ASSERT(s.ok(), s.ToString());
         break;
 
       case 'S':  // Scan
         workload_file >> start_key >> end_key;
         it->Refresh();
-        assert(it->status().ok(), it->status().ToString());
+        ASSERT(it->status().ok(), it->status().ToString());
 
         for (it->Seek(start_key); it->Valid(); it->Next()) {
           if (it->key().ToString() >= end_key) {
@@ -141,7 +143,7 @@ inline bool RunWorkload(DBEnv& env) {
           }
         }
 
-        assert(it->status().ok(), it->status().ToString());
+        ASSERT(it->status().ok(), it->status().ToString());
 
         break;
 
@@ -160,7 +162,7 @@ inline bool RunWorkload(DBEnv& env) {
   WaitForCompactions(db);
 
   s = db->Close();
-  assert(s.ok(), s.ToString());
+  ASSERT(s.ok(), s.ToString());
 
   std::cout << "End of experiment - TEST!!" << std::endl;
 
@@ -175,7 +177,7 @@ inline bool RunWorkload(DBEnv& env) {
 }
 
 /** Prints the experimental setup to out. */
-inline void PrintExperimentalSetup(DBEnv& env) {
+inline void PrintExperimentalSetup(const DBEnv& env) {
   constexpr int l = 10;
   std::cout << std::setw(l) << "cmpt_sty"
     << std::setw(l) << "cmpt_pri"
