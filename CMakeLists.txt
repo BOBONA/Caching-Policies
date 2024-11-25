@@ -26,10 +26,10 @@ option(WITH_TRACE_TOOLS "Build with trace tools" OFF)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/rocksdb/include)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/KV-WorkloadGenerator/include)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/workload-generator/include)
 
 add_subdirectory(lib/rocksdb)
-add_subdirectory(lib/KV-WorkloadGenerator)
+add_subdirectory(lib/workload-generator)
 
 set(SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/src/working_version.cc
