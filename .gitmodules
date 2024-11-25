@@ -1,4 +1,3 @@
 [submodule "lib/rocksdb"]
-	path = lib/rocksdb
-	url = https://github.com/SSD-Brandeis/RocksDB-SSD
-	branch = main
+    path = lib/rocksdb
+    url = https://github.com/BOBONA/rocksdb.git
