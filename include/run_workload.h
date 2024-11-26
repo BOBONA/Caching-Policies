@@ -103,39 +103,44 @@ inline bool RunWorkload(DBEnv& env) {
   Status s = DB::Open(options, kDBPath, &db);
   ASSERT(s.ok(), s.ToString());
 
-  std::ifstream workload_file("workload.txt");
-  ASSERT(workload_file.is_open(), "Failed to open workload file.");
+  std::ifstream workload_file(env.workload_file_path);
+  ASSERT(workload_file.is_open(), "Failed to open workload file " + env.workload_file_path);
 
   auto it = db->NewIterator(read_options);
-  while (!workload_file.eof()) {
-    char instruction;
+  int line_num = 0;
+  char instruction;
+  while (workload_file >> instruction) {
     std::string key, start_key, end_key, value;
-    workload_file >> instruction;
+
+    // Print progress
+    if (line_num % 1000000 == 0) {
+      std::cout << "#";
+    }
 
     switch (instruction) {
       case 'I':  // Insert
       case 'U':  // Update
         workload_file >> key >> value;
         s = db->Put(write_options, key, value);
-        ASSERT(s.ok(), s.ToString());
+        ASSERT(s.ok(), s.ToString() + " \nWorkload line: " + std::to_string(line_num));
         break;
 
       case 'D':  // Delete
         workload_file >> key;
         s = db->Delete(write_options, key);
-        ASSERT(s.ok(), s.ToString());
+        ASSERT(s.ok(), s.ToString() + " \nWorkload line: " + std::to_string(line_num));
         break;
 
       case 'Q':  // Query
         workload_file >> key;
         s = db->Get(read_options, key, &value);
-        ASSERT(s.ok(), s.ToString());
+        ASSERT(s.ok(), s.ToString() + " \nWorkload line: " + std::to_string(line_num));
         break;
 
       case 'S':  // Scan
         workload_file >> start_key >> end_key;
         it->Refresh();
-        ASSERT(it->status().ok(), it->status().ToString());
+        ASSERT(it->status().ok(), it->status().ToString() + " \nWorkload line: " + std::to_string(line_num));
 
         for (it->Seek(start_key); it->Valid(); it->Next()) {
           if (it->key().ToString() >= end_key) {
@@ -143,14 +148,16 @@ inline bool RunWorkload(DBEnv& env) {
           }
         }
 
-        ASSERT(it->status().ok(), it->status().ToString());
+        ASSERT(it->status().ok(), it->status().ToString() + " \nWorkload line: " + std::to_string(line_num));
 
         break;
 
       default:
-        std::cerr << "ERROR: Unknown workload instruction." << std::endl;
+        std::cerr << "ERROR: Unknown workload instruction. Workload line: " << line_num << std::endl;
         break;
     }
+
+    line_num++;
   }
 
   delete it;
@@ -164,7 +171,7 @@ inline bool RunWorkload(DBEnv& env) {
   s = db->Close();
   ASSERT(s.ok(), s.ToString());
 
-  std::cout << "End of experiment - TEST!!" << std::endl;
+  std::cout << " End of experiment - TEST!!" << std::endl;
 
   if (env.enable_perf_iostat) {
     SetPerfLevel(kDisable);

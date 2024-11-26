@@ -6,9 +6,10 @@
 /** For fields that can be set from the command line, defaults are provided in this namespace */
 namespace Default {
 
+  const std::string WORKLOAD_FILE_PATH = "workload.txt";  // [w]
   constexpr bool DESTROY_DATABASE = true; // [d]
   constexpr bool CLEAR_SYSTEM_CACHE = true; // [cc]
-  constexpr bool ENABLE_PERF_IOSTAT = false;  // [stat]
+  constexpr bool ENABLE_PERF_IOSTAT = true;  // [stat]
 
   constexpr unsigned int BUFFER_SIZE_IN_PAGES = 4096; // [P]
   constexpr unsigned int ENTRIES_PER_PAGE = 4; // [B]
@@ -46,6 +47,8 @@ public:
   //============================================================================
   // Our own configuration options
 
+  /** The path to the workload file */
+  std::string workload_file_path = Default::WORKLOAD_FILE_PATH;
   /** Whether to destroy the database on start */
   bool destroy_database = Default::DESTROY_DATABASE;
   /** Whether to clear the system cache on start */
@@ -86,7 +89,8 @@ public:
 
   /* See ColumnFamilyOptions in options.h */
 
-  rocksdb::CompressionType compression = rocksdb::kSnappyCompression;  // Line 214 in options.h
+  bool use_default_compression = true;
+  rocksdb::CompressionType compression = rocksdb::kNoCompression;  // Line 214 in options.h
 
   //============================================================================
   /* See AdvancedColumnFamilyOptions in advanced_options.h */

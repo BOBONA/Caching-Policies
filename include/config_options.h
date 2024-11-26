@@ -32,7 +32,8 @@ inline void configureOptions(const DBEnv & env, Options& options) {
 
   /* ColumnFamilyOptions */
 
-  options.compression = env.compression;
+  if (!env.use_default_compression)
+    options.compression = env.compression;
   options.write_buffer_size = env.GetBufferSize();
   options.max_bytes_for_level_base = env.GetMaxBytesForLevelBase();
 

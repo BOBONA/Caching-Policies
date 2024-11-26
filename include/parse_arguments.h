@@ -9,6 +9,8 @@ inline void ParseArguments(const int argc, char *argv[], DBEnv& env) {
   args::ArgumentParser parser("RocksDB_parser.", "");
   args::Group group(parser, "This group is all exclusive:", args::Group::Validators::DontCare);
 
+  args::ValueFlag<std::string> workload_file(group, "workload.txt", "The workload file to run [default: workload.txt]",
+    {'w', "workload"});
   args::ValueFlag<int> destroy_database_cmd(group, "d", "Destroy and recreate the database [def: 1]",
     {'d', "destroy"});
   args::ValueFlag<int> clear_system_cache_cmd(group, "cc", "Clear system cache [def: 1]",
@@ -33,10 +35,13 @@ inline void ParseArguments(const int argc, char *argv[], DBEnv& env) {
     {'b', "bits_per_key"});
   args::ValueFlag<int> block_cache_cmd(group, "bb", "Block cache size in MB [default: 8 MB]",
     {"bb"});
-  args::ValueFlag<int> enable_perf_iostat_cmd(group, "enable_perf_iostat", "Enable RocksDB's internal Perf and IOstat [default: 0]",
+  args::ValueFlag<int> enable_perf_iostat_cmd(group, "enable_perf_iostat", "Enable RocksDB's internal Perf and IOstat [default: 1]",
     {"stat"});
 
   parser.ParseCLI(argc, argv);
+
+  if (workload_file)
+    env.workload_file_path = get(workload_file);
 
   if (destroy_database_cmd)
     env.destroy_database = get(destroy_database_cmd);
