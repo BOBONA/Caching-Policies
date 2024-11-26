@@ -33,7 +33,8 @@
 
 # files
 **.log
-workload.txt
+workloads/
+!workloads/workloads.md
 
 # db_working_home
 **/db/**
