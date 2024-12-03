@@ -107,14 +107,14 @@ inline bool RunWorkload(DBEnv& env) {
   ASSERT(workload_file.is_open(), "Failed to open workload file " + env.workload_file_path);
 
   auto it = db->NewIterator(read_options);
-  int line_num = 0;
+  int line_num = 1;
   char instruction;
   while (workload_file >> instruction) {
     std::string key, start_key, end_key, value;
 
     // Print progress
-    if (line_num % 1000000 == 0) {
-      std::cout << "#";
+    if (line_num % env.log_interval == 0) {
+      std::cout << "#" << std::flush;
     }
 
     switch (instruction) {
@@ -174,10 +174,15 @@ inline bool RunWorkload(DBEnv& env) {
   std::cout << " End of experiment - TEST!!" << std::endl;
 
   if (env.enable_perf_iostat) {
-    SetPerfLevel(kDisable);
-    std::cout << "RocksDB Perf Context: " << std::endl << get_perf_context()->ToString() << std::endl;
-    std::cout << "RocksDB IO Stats Context: " << std::endl << get_iostats_context()->ToString() << std::endl;
-    std::cout << "Rocksdb Stats: " << std::endl << options.statistics->ToString() << std::endl;
+    std::ofstream output_file(env.output_file_path, std::ios::out | std::ios::trunc);
+    ASSERT(output_file.is_open(), "Failed to open output file " + env.output_file_path);
+    output_file << get_perf_context()->ToString() << std::endl;
+    output_file << std::endl;
+    output_file << get_iostats_context()->ToString() << std::endl;
+    output_file << std::endl;
+    output_file << options.statistics->ToString();
+
+    std::cout << "Results written to " << env.output_file_path << std::endl;
   }
 
   return true;

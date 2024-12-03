@@ -11,6 +11,10 @@ inline void ParseArguments(const int argc, char *argv[], DBEnv& env) {
 
   args::ValueFlag<std::string> workload_file(group, "workload.txt", "The workload file to run [default: workload.txt]",
     {'w', "workload"});
+  args::ValueFlag<std::string> output_file(group, "output.txt", "The output file to write results to [default: output.txt]",
+    {'o', "output"});
+  args::ValueFlag<int> log_interval_cmd(group, "interval", "The interval at which to log [default: 100000]",
+    {"interval"});
   args::ValueFlag<int> destroy_database_cmd(group, "d", "Destroy and recreate the database [def: 1]",
     {'d', "destroy"});
   args::ValueFlag<int> clear_system_cache_cmd(group, "cc", "Clear system cache [def: 1]",
@@ -42,6 +46,12 @@ inline void ParseArguments(const int argc, char *argv[], DBEnv& env) {
 
   if (workload_file)
     env.workload_file_path = get(workload_file);
+
+  if (output_file)
+    env.output_file_path = get(output_file);
+
+  if (log_interval_cmd)
+    env.log_interval = get(log_interval_cmd);
 
   if (destroy_database_cmd)
     env.destroy_database = get(destroy_database_cmd);

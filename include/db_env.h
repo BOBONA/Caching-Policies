@@ -7,6 +7,10 @@
 namespace Default {
 
   const std::string WORKLOAD_FILE_PATH = "workload.txt";  // [w]
+  const std::string OUTPUT_FILE_PATH = "output.txt";  // [o]
+
+  constexpr int DEFAULT_LOG_INTERVAL = 100000;  // [interval]
+
   constexpr bool DESTROY_DATABASE = true; // [d]
   constexpr bool CLEAR_SYSTEM_CACHE = true; // [cc]
   constexpr bool ENABLE_PERF_IOSTAT = true;  // [stat]
@@ -49,6 +53,10 @@ public:
 
   /** The path to the workload file */
   std::string workload_file_path = Default::WORKLOAD_FILE_PATH;
+  /** The path to the output file */
+  std::string output_file_path = Default::OUTPUT_FILE_PATH;
+  /** The interval at which to log */
+  int log_interval = Default::DEFAULT_LOG_INTERVAL;
   /** Whether to destroy the database on start */
   bool destroy_database = Default::DESTROY_DATABASE;
   /** Whether to clear the system cache on start */
