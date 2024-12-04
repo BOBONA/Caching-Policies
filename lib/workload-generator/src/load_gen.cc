@@ -25,7 +25,6 @@
 #define PQ_THRESHOLD 0.1  // PQ_THRESHOLD*insert_count number of inserts must be made before Point Queries may take place (applicable when an empty database is being populated)
 #define RQ_THRESHOLD 0.1  // RQ_THRESHOLD*insert_count number of inserts must be made before Range Queries may take place (applicable when an empty database is being populated)
 #define STRING_KEY_ENABLED true
-#define FILENAME "workload.txt"
 
 // using namespace std;
 
@@ -51,6 +50,7 @@ uint32_t entry_size = 8; // in bytes // size of uint32_t = 4 bytes // range of u
 uint32_t key_size = 4;
 float lambda = -1; // lambda = key_size / (key_size + value_size) ; key_size = entry_size * lambda ; value_size = entry_size * (1-lambda)
 bool load_from_existing_workload = false;
+std::string preload_filename = "";
 std::string out_filename = "";
 
 const char value_alphanum[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"; // "0123456789";
@@ -150,7 +150,7 @@ void generate_workload()
     std::vector<Key> tmp_insert_pool_vec;
     if (load_from_existing_workload)
     {
-        std::ifstream fin(file_path + FILENAME);
+        std::ifstream fin(file_path + preload_filename);
         // std::cout << "WL_GEN :: preload input file = " << file_path << FILENAME << std::endl;
         // load from existing workload file: NOTE: ONLY CONSIDERS INSERTS!!!
         if (fin.good())
@@ -186,7 +186,7 @@ void generate_workload()
     if (out_filename.compare("") == 0)
     {
 
-        fp.open(file_path + FILENAME);
+        fp.open(file_path + "workload.txt");
         //   std::cout << "WL_GEN :: output file = " << file_path << FILENAME << std::endl;
     }
     else
@@ -226,8 +226,18 @@ void generate_workload()
     }
     char prefix[] = "00";
 
+    std::cout << "Progress: ";
+
+    int log_interval = (insert_count + maximum_unique_existing_point_query_count + total_operation_count) / 100;
+    int aggregate_progress = 1;
+
     while (_insert_count < insert_count)
     {
+        if (aggregate_progress % log_interval == 0) {
+            std::cout << "#" << std::flush;
+        }
+        aggregate_progress++;
+
         Key key;
         Key key_suffix;
         // std::cout << key << std::endl;
@@ -294,6 +304,11 @@ void generate_workload()
     long _maximum_unique_non_existing_point_query_count = 0;
     while (_maximum_unique_non_existing_point_query_count < maximum_unique_non_existing_point_query_count)
     {
+        if (aggregate_progress % log_interval == 0) {
+            std::cout << "#" << std::flush;
+        }
+        aggregate_progress++;
+
         Key key;
         if (STRING_KEY_ENABLED)
             key = Key::get_key(key_size, STRING_KEY_ENABLED);
@@ -325,8 +340,11 @@ void generate_workload()
 
     while (_total_operation_count < total_operation_count)
     {
+        if (aggregate_progress % log_interval == 0) {
+            std::cout << "#" << std::flush;
+        }
+
         int choice = get_choice(insert_pool.size(), insert_count, update_count, point_delete_count, range_delete_count, point_query_count, range_query_count, _insert_count, _update_count, _point_delete_count, _range_delete_count, _point_query_count, _range_query_count);
-        // std::cout << "choice = " << choice << std::endl;
 
         if (choice == 0)
             continue;
@@ -357,6 +375,7 @@ void generate_workload()
             _insert_count++;
             _effective_ingestion_count++;
             _total_operation_count++;
+            aggregate_progress++;
         }
 
         else if (choice == 2)
@@ -417,6 +436,7 @@ void generate_workload()
             }
 
             _total_operation_count++;
+            aggregate_progress++;
         }
 
         else if (choice == 3)
@@ -456,6 +476,7 @@ void generate_workload()
                 _point_delete_count++;
                 _effective_ingestion_count--;
                 _total_operation_count++;
+                aggregate_progress++;
             }
         }
 
@@ -525,6 +546,7 @@ void generate_workload()
                 _range_delete_count++;
                 _effective_ingestion_count -= entries_in_range_delete;
                 _total_operation_count++;
+                aggregate_progress++;
             }
         }
 
@@ -546,6 +568,7 @@ void generate_workload()
                     _point_query_count++;
                     _non_existing_point_query_count++;
                     _total_operation_count++;
+                    aggregate_progress++;
                 }
                 else if (_existing_point_query_count < existing_point_query_count)
                 {
@@ -591,6 +614,7 @@ void generate_workload()
                     _point_query_count++;
                     _existing_point_query_count++;
                     _total_operation_count++;
+                    aggregate_progress++;
                     //=======
                     //		else if (_existing_point_query_count < existing_point_query_count) {
                     //            // std::cout << "_insert_count " << _insert_count << " ; _point_query_count " << _point_query_count << std::endl;
@@ -710,6 +734,7 @@ void generate_workload()
                 fp << "S " << start_key << " " << end_key << std::endl;
                 _range_query_count++;
                 _total_operation_count++;
+                aggregate_progress++;
             }
         }
 
@@ -727,7 +752,6 @@ void print_workload_parameters(int _insert_count, int _update_count, int _point_
     std::cout << "Workload_parameters: "
               << "entry_size = " << entry_size << ", "
               << "key_size = " << key_size << ", "
-              << "lambda = " << lambda << ", "
               << "insert_count = " << _insert_count << ", "
               << "update_count = " << _update_count << ", "
               << "point_delete_count = " << _point_delete_count << ", "
@@ -949,7 +973,8 @@ int parse_arguments2(int argc, char *argv[])
     args::ValueFlag<uint32_t> entry_size_cmd(group1, "E", "Entry size (in bytes) [def: 8]", {'E', "entry_size"});
     args::ValueFlag<float> lambda_cmd(group1, "L", "lambda = key_size / (key_size + value_size) [def: 0.5]", {'L', "lambda"});
 
-    args::Flag load_from_existing_workload_cmd(group1, "Preload", "preload from workload.txt", {"PL", "preloading"});
+    args::Flag load_from_existing_workload_cmd(group1, "Preload", "preload from workload", {"PL", "preloading"});
+    args::ValueFlag<std::string> preload_filename_cmd(group1, "PLF", "preload filename", {"PLF", "preload-filename"});
     args::ValueFlag<std::string> out_filename_cmd(group1, "OP", "output path [def: 0]", {"OP", "output-path"});
     // distribution params
     args::ValueFlag<uint32_t> insert_dist_cmd(group1, "ID", "Insert Distribution [0: uniform, 1:normal, 2:beta, 3:zipf, def: 0]", {"ID", "insert_distribution"});
@@ -1048,6 +1073,7 @@ int parse_arguments2(int argc, char *argv[])
     }
 
     load_from_existing_workload = load_from_existing_workload_cmd ? true : false;
+    preload_filename = preload_filename_cmd ? args::get(preload_filename_cmd) : "";
     out_filename = out_filename_cmd ? args::get(out_filename_cmd) : "";
 
     // distribution

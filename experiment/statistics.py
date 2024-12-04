@@ -1,6 +1,9 @@
+# Alias for readability
 type LevelByLevelStat = list[int]
 
 class AggregateStat:
+    """Class to store RocksDB aggregate statistics"""
+
     def __init__(self):
         self.median: float = 0
         self.p95: float = 0
@@ -10,6 +13,8 @@ class AggregateStat:
         self.sum: int = 0
 
 class RocksDBStatistics:
+    """Class to store RocksDB statistics"""
+
     def __init__(self):
         self.performance: dict[str, int | LevelByLevelStat] = {}
         self.io: dict[str, int] = {}
@@ -17,7 +22,15 @@ class RocksDBStatistics:
         self.aggregate_stats: dict[str, AggregateStat] = {}
 
 
-def parse_output(output_file):
+def parse_output(output_file) -> RocksDBStatistics:
+    """
+    Replaces an output file from the RocksDB benchmark with a parsed JSON version,
+    and returns the parsed statistics.
+
+    :param output_file: The output file to parse
+    :return: The parsed statistics
+    """
+
     statistics = RocksDBStatistics()
     with open(output_file, 'r') as f:
         # Parse the performance context

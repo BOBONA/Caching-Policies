@@ -159,4 +159,5 @@ public:
   bool sync = false;  // Line 1900 in options.h
   bool disableWAL = false;  // 1908
   bool no_slowdown = false;  // 1919
+  // TODO add low_pri
 };

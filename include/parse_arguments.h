@@ -7,7 +7,7 @@
 /** Parses the command line arguments and updates the DBEnv object accordingly. */
 inline void ParseArguments(const int argc, char *argv[], DBEnv& env) {
   args::ArgumentParser parser("RocksDB_parser.", "");
-  args::Group group(parser, "This group is all exclusive:", args::Group::Validators::DontCare);
+  args::Group group(parser, "This group is all exclusive: ", args::Group::Validators::DontCare);
 
   args::ValueFlag<std::string> workload_file(group, "workload.txt", "The workload file to run [default: workload.txt]",
     {'w', "workload"});

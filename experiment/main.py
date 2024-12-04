@@ -1,9 +1,7 @@
-from experiment.workload import run_workload
-from workload import compile_cmd
+from experiment.run_workload import run_workload
 
-compile_cmd()
 
-workload = 'write_heavy.txt'
-output_file = 'output/write_heavy.txt'
+workload = 'write_heavy_small.txt'
+output_file = 'output/results.json'
 
 run_workload(workload, output_file)
