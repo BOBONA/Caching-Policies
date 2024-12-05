@@ -24,8 +24,7 @@ class RocksDBStatistics:
 
 def parse_output(output_file) -> RocksDBStatistics:
     """
-    Replaces an output file from the RocksDB benchmark with a parsed JSON version,
-    and returns the parsed statistics.
+    Parse the output file from RocksDB and return the statistics.
 
     :param output_file: The output file to parse
     :return: The parsed statistics

@@ -8,10 +8,14 @@ from tqdm import tqdm
 
 ZIPF_ALPHAS = [0.1 * i for i in range(1, 11)]
 
+PAGE_SIZE = 4096
 KEY_SIZE = 8
-VALUE_SIZE = 1016
+VALUE_SIZE = 120
 
-NUM_OPERATIONS = 10000000
+NUM_INSERTIONS = 1000000
+NUM_OPERATIONS = 1000000
+
+WORKLOAD_PATH = 'workloads'
 
 
 def random_string(size):
@@ -57,22 +61,25 @@ def execute_workload_gen(output_file: str, args: list):
 def generate_workloads():
     """Conditionally generates workloads"""
 
-    insertion_workload = 'workloads/insertions.txt'
+    insertion_workload = f'{WORKLOAD_PATH}/insertions.txt'
+    insertion_dir = os.path.dirname(insertion_workload)
+    if not os.path.exists(insertion_dir):
+        os.makedirs(insertion_dir)
     if not os.path.exists(insertion_workload):
-        generate_insertions(insertion_workload, NUM_OPERATIONS)
+        generate_insertions(insertion_workload, NUM_INSERTIONS)
 
     print('Query workloads take 30-60 seconds to preload the insertions')
 
-    uniform_workload = 'workloads/uniform.txt'
+    uniform_workload = f'{WORKLOAD_PATH}/uniform.txt'
     if not os.path.exists(uniform_workload):
         execute_workload_gen(uniform_workload, ['--preloading', '--preload-filename', insertion_workload,
-                                                '-Q', '10000000'])
+                                                '-Q', str(NUM_OPERATIONS)])
 
     for alpha in ZIPF_ALPHAS:
-        workload = f'workloads/zipf_{alpha:.2f}.txt'
+        workload = f'{WORKLOAD_PATH}/zipf_{alpha:.2f}.txt'
         if not os.path.exists(workload):
             execute_workload_gen(workload, ['--preloading', '--preload-filename', insertion_workload,
-                                            '-Q', '10000000', '--ED=3', '--ED_ZALPHA', str(alpha)])
+                                            '-Q', str(NUM_OPERATIONS), '--ED=3', '--ED_ZALPHA', str(alpha)])
 
 
 if __name__ == '__main__':

@@ -53,7 +53,7 @@ inline void configureOptions(const DBEnv & env, Options& options) {
   options.memtable_factory = std::make_shared<DBEnv::memtable_factory>();
 }
 
-inline void configureTableOptions(DBEnv& env, BlockBasedTableOptions& table_options) {
+inline void configureTableOptions(const DBEnv & env, BlockBasedTableOptions& table_options) {
   if (env.bits_per_key > 0) {
     table_options.filter_policy.reset(NewBloomFilterPolicy(env.bits_per_key, false));
   }
@@ -84,14 +84,15 @@ inline void configureTableOptions(DBEnv& env, BlockBasedTableOptions& table_opti
   table_options.metadata_cache_options = metadata_cache_options;
 }
 
-inline void configureReadOptions(DBEnv& env, ReadOptions& read_options) {
+inline void configureReadOptions(const DBEnv & env, ReadOptions& read_options) {
   read_options.verify_checksums = env.verify_checksums;
   read_options.fill_cache = env.fill_cache;
   read_options.ignore_range_deletions = env.ignore_range_deletions;
 }
 
-inline void configureWriteOptions(DBEnv& env, WriteOptions& write_options) {
+inline void configureWriteOptions(const DBEnv & env, WriteOptions& write_options) {
   write_options.sync = env.sync;
   write_options.disableWAL = env.disableWAL;
   write_options.no_slowdown = env.no_slowdown;
+  write_options.low_pri = env.low_pri;
 }

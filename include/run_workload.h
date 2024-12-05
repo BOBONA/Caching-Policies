@@ -21,7 +21,6 @@
 
 #include <rocksdb/statistics.h>
 
-inline std::string kDBPath = "./db";
 inline std::mutex mtx;
 inline std::condition_variable cv;
 inline bool compaction_complete = false;
@@ -77,7 +76,7 @@ inline bool RunWorkload(DBEnv& env) {
 
   if (env.destroy_database) {
     std::cout << "Destroying database..." << std::endl;
-    DestroyDB(kDBPath, options);
+    DestroyDB(env.db_path, options);
   }
 
   if (env.clear_system_cache) {
@@ -100,7 +99,7 @@ inline bool RunWorkload(DBEnv& env) {
   options.listeners.emplace_back(compaction_listener);
 
   DB* db;
-  Status s = DB::Open(options, kDBPath, &db);
+  Status s = DB::Open(options, env.db_path, &db);
   ASSERT(s.ok(), s.ToString());
 
   std::ifstream workload_file(env.workload_file_path);

@@ -8,6 +8,7 @@ namespace Default {
 
   const std::string WORKLOAD_FILE_PATH = "workload.txt";  // [w]
   const std::string OUTPUT_FILE_PATH = "output.txt";  // [o]
+  const std::string DB_PATH = "./db";  // [--path]
 
   constexpr int DEFAULT_LOG_INTERVAL = 100000;  // [interval]
 
@@ -28,13 +29,19 @@ namespace Default {
 
   constexpr int BLOOM_FILTER_BITS_PER_KEY = 10;  // [b]
 
-  constexpr int BLOCK_CACHE = 8;  // [bb]
+  constexpr int BLOCK_CACHE = 32;  // [bb]
+  constexpr bool STRICT_CAPACITY_LIMIT = true;  // [bb_strict]
+  constexpr bool CACHE_METADATA_WITH_HIGH_PRIORITY = true;  // [cache_metadata_high_pri]
+  constexpr auto METADATA_PINNING = rocksdb::PinningTier::kNone;  // [metadata_pinning]
+  constexpr float CACHE_HIGH_PRIORITY_RATIO = 0.5f;  // [cache_high_priority_ratio]
 }  // namespace Default
 
 /**
  * DBEnv is a wrapper for configuring RocksDB.
  * We expose certain RocksDB options as well was our own options for running workloads.
  * For detailed information, look through the referenced RocksDB files.
+ *
+ * Obviously, the line numbers will only necessarily match until the next RocksDB update.
  */
 class DBEnv {
 public:
@@ -55,6 +62,8 @@ public:
   std::string workload_file_path = Default::WORKLOAD_FILE_PATH;
   /** The path to the output file */
   std::string output_file_path = Default::OUTPUT_FILE_PATH;
+  /** The path to the database */
+  std::string db_path = Default::DB_PATH;
   /** The interval at which to log */
   int log_interval = Default::DEFAULT_LOG_INTERVAL;
   /** Whether to destroy the database on start */
@@ -119,7 +128,7 @@ public:
   using TableOptions = rocksdb::BlockBasedTableOptions;
 
   bool cache_index_and_filter_blocks = true; // Line 149 in table.h
-  bool cache_index_and_filter_blocks_with_high_priority = true;  // 155
+  bool cache_index_and_filter_blocks_with_high_priority = Default::CACHE_METADATA_WITH_HIGH_PRIORITY;  // 155
 
   TableOptions::IndexType index_type = TableOptions::kBinarySearch;  // 237
   TableOptions::DataBlockIndexType data_block_index_type = TableOptions::kDataBlockBinarySearch;  // 245
@@ -131,9 +140,11 @@ public:
 
   /* See MetadataCacheOptions in table.h */
 
+  /** This option is only relevant to partitioned indexes and filters */
   rocksdb::PinningTier top_level_index_pinning = rocksdb::PinningTier::kAll;  // Line 96 in table.h
   rocksdb::PinningTier partition_pinning = rocksdb::PinningTier::kAll;  // 100
-  rocksdb::PinningTier unpartitioned_pinning = rocksdb::PinningTier::kAll;  // 108
+
+  rocksdb::PinningTier unpartitioned_pinning = Default::METADATA_PINNING;  // 108
 
   //============================================================================
   /* See ShardedCacheOptions in cache.h */
@@ -141,11 +152,13 @@ public:
   /** A capacity of 0 uses RocksDB's default cache */
   int capacity = 1024 * 1024 * Default::BLOCK_CACHE;  // Line 132 in cache.h
   int num_shard_bits = -1;  // 138
-  bool strict_capacity_limit = false;  // 145
+  bool strict_capacity_limit = Default::STRICT_CAPACITY_LIMIT;  // 145
 
   /* See LRUCacheOptions in cache.h */
 
-  double cache_high_priority_ratio = 0.5;  // Line 237 in cache.h
+  double cache_high_priority_ratio = Default::CACHE_HIGH_PRIORITY_RATIO;  // Line 237 in cache.h
+  // Unclear what adding another priority does (might only be applicable to BlobDB)
+  double cache_low_priority_ratio = 0.0;  // 238
 
   //============================================================================
   /* See ReadOptions in options.h */
@@ -156,8 +169,8 @@ public:
 
   /* See WriteOptions in options.h */
 
-  bool sync = false;  // Line 1900 in options.h
-  bool disableWAL = false;  // 1908
-  bool no_slowdown = false;  // 1919
-  // TODO add low_pri
+  bool sync = false;  // Line 1986 in options.h
+  bool disableWAL = false;  // 1994
+  bool no_slowdown = false;  // 2005
+  bool low_pri = true;  // 2014
 };
