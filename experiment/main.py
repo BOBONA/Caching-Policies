@@ -9,7 +9,7 @@ def generate_filled_db():
     workload = 'workloads/insertions.txt'
     output_file = 'output/filled_db.json'
 
-    run_workload(workload, output_file, ['--path', './filled_db', '-T', '4'])
+    run_workload(workload, './filled_db', output_file, ['-T', '4'])
 
 
 def run_tests():
@@ -51,7 +51,7 @@ def run_tests():
     for option in cache_metadata_options:
         name = f'high_priority-{option}'
         db_path = f'{experiment_path}/{name}'
-        workload_path = 'workloads/zipf_0.30.txt.txt'
+        workload_path = 'workloads/zipf_0.30.txt'
         actual_size = int(total_size_mb * 0.2)
         if os.path.exists(f'{experiment_path}/{name}.json'):
             continue
@@ -68,7 +68,7 @@ def run_tests():
         for cache_size in subset_cache_sizes:
             name = f'pin-{policy}_bb-{cache_size}'
             db_path = f'{experiment_path}/{name}'
-            workload_path = 'workloads/zipf_0.30.txt.txt'
+            workload_path = 'workloads/zipf_0.30.txt'
             actual_size = int(total_size_mb * cache_size)
             if os.path.exists(f'{experiment_path}/{name}.json'):
                 continue
@@ -86,7 +86,7 @@ def run_tests():
             for policy_choice in ['kNone', 'kFlushedOrSimilar']:
                 name = f'high_pri-{choice}_pin-{policy_choice}_bb-{cache_size}'
                 db_path = f'{experiment_path}/{name}'
-                workload_path = 'workloads/zipf_0.30.txt.txt'
+                workload_path = 'workloads/zipf_0.30.txt'
                 actual_size = int(total_size_mb * cache_size)
                 if os.path.exists(f'{experiment_path}/{name}.json'):
                     continue
