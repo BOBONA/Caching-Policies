@@ -6,7 +6,7 @@ from matplotlib.colors import Normalize
 from collections import defaultdict
 import numpy as np
 
-directory = "experiment/experiment1_skew_over_bb"
+directory = "../experiment1_skew_over_bb"
 results = defaultdict(lambda: defaultdict(float))
 
 for filename in os.listdir(directory):

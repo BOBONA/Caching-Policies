@@ -73,7 +73,7 @@ def generate_workloads():
     uniform_workload = f'{WORKLOAD_PATH}/uniform.txt'
     if not os.path.exists(uniform_workload):
         execute_workload_gen(uniform_workload, ['--preloading', '--preload-filename', insertion_workload,
-                                                '-Q', str(NUM_OPERATIONS)])
+                                                '-Q', str(NUM_OPERATIONS), '--ED=3', '--ED_ZALPHA', '0.001'])
 
     for alpha in ZIPF_ALPHAS:
         workload = f'{WORKLOAD_PATH}/zipf_{alpha:.2f}.txt'

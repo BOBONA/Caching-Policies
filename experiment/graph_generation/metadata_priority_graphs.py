@@ -3,7 +3,7 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 
-directory = "experiment/experiment2_metadata_priority_matters"
+directory = "../experiment2_metadata_priority_matters"
 files = {
     "False": "high_priority-False.json",
     "True": "high_priority-True.json"
