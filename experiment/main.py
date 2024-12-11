@@ -66,16 +66,17 @@ def run_tests():
     experiment_path = 'experiment3_pinning_policies'
     for policy, choice in pinning_options.items():
         for cache_size in subset_cache_sizes:
-            name = f'pin-{policy}_bb-{cache_size}'
-            db_path = f'{experiment_path}/{name}'
-            workload_path = 'workloads/zipf_0.30.txt'
-            actual_size = int(total_size_mb * cache_size)
-            if os.path.exists(f'{experiment_path}/{name}.json'):
-                continue
-            run_workload_from_base('filled_db', db_path, workload_path, f'{experiment_path}/{name}.json',
-                                   ['-T', '4', '--bb', str(actual_size), '--metadata_pinning', str(choice),
-                                    '--cache_high_priority_ratio', '0.5', '--cache_metadata_high_pri', '1'])
-            shutil.rmtree(db_path)
+            for workload in ['uniform.txt', 'zipf_0.30.txt', 'zipf_1.00.txt']:
+                name = f'pin-{policy}_bb-{cache_size}_{workload}'
+                db_path = f'{experiment_path}/{name}'
+                workload_path = f'workloads/{workload}'
+                actual_size = int(total_size_mb * cache_size)
+                if os.path.exists(f'{experiment_path}/{name}.json'):
+                    continue
+                run_workload_from_base('filled_db', db_path, workload_path, f'{experiment_path}/{name}.json',
+                                       ['-T', '4', '--bb', str(actual_size), '--metadata_pinning', str(choice),
+                                        '--cache_high_priority_ratio', '0.5', '--cache_metadata_high_pri', '1'])
+                shutil.rmtree(db_path)
 
     # Experiment 4: We test high priority ratios against different cache sizes for kNone and kFlushedOrSimilar
     # Metadata is cached with high priority. We use zipf_0.30.txt as the workload.

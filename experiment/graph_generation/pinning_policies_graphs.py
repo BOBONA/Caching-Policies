@@ -2,16 +2,15 @@ import os
 import json
 import matplotlib.pyplot as plt
 
-directory = "experiment/experiment3_pinning_policies"
+directory = "../experiment3_pinning_policies/"
 results = {}
 
 for filename in os.listdir(directory):
-    if filename.endswith(".json"):
+    if filename.endswith("zipf_1.00.txt.json"):
         parts = filename.split("_")
         policy = parts[0] # get policy name
-        bb = float(parts[-1].replace("bb-", "").replace(".json", ""))  # get block cache size
+        bb = float(parts[1].replace("bb-", "").replace(".json", ""))  # get block cache size
 
-        
         try:
             with open(os.path.join(directory, filename), "r") as f:
                 content = json.load(f)

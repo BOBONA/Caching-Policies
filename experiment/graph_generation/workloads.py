@@ -19,7 +19,7 @@ def read_keys(file_path):
 
 plt.figure(figsize=(12, 8))
 
-cmap = plt.get_cmap('copper')
+cmap = plt.get_cmap('viridis')
 
 for i, workload in enumerate(workloads):
     keys = read_keys(workload)
@@ -38,11 +38,10 @@ for i, workload in enumerate(workloads):
     plt.plot(x_smooth, y_smooth, label=workload, color=color, linewidth=2)
 
 plt.title('Workload Distributions')
-plt.xlabel('Key Frequency')
-plt.ylabel('Count')
+plt.xlabel('Key')
+plt.ylabel('Frequency')
 plt.yscale('log')
 plt.legend(loc='upper right')
 plt.grid(True)
 plt.savefig('workload_distributions.png')
 plt.show()
-
